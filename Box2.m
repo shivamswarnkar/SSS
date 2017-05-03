@@ -30,11 +30,14 @@ classdef Box2 < Box1
     
     properties
         type = BoxType.UNKOWN;           % = FREE/MIXED/STUCK
-        outerFeatures = {};      % outer approximate feature set
-        innerFeatures = {};      % inner approximate feature set  
+        features = {};       
         pNbr = [];      % principal Nbrs - 1, 2, 3, 4 - N, W, S, E
+        pNbrOf = [];
         visited = false;    % for Graph Search use later
+        pathVisited = false;
         unionFindIdx = -1;
+        prev = [];
+        next = [];
     end
     
     properties (Constant)

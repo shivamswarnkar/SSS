@@ -13,6 +13,7 @@
 classdef Subdiv1 < handle
     properties
         rootBox;
+         colo = [[1 1 1];[0.5 0.5 0.5];[1 0 0]; [1 1 0]; [0 1 0]];
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -125,6 +126,7 @@ classdef Subdiv1 < handle
         end
         
         function displaySubDiv(obj,box)
+            
             if nargin < 2
                 box = obj.rootBox;
             end
@@ -135,6 +137,9 @@ classdef Subdiv1 < handle
                 y2 = box.y + box.w;
                 X = [x1, x2, x2, x1, x1];
                 Y = [y1, y1, y2, y2, y1];
+                
+                %fill(box.shape().X,box.shape().Y,obj.colo(int32(box.type),:));
+                fill(X, Y, obj.colo(box.type + 4,:));
                 plot(X,Y,'b-');
                 hold on;
             else

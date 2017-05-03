@@ -43,6 +43,7 @@ classdef Geom2d
                  s= norm(point -proj);
              end
          else % obj is point
+%              disp(['obj --> ' obj]);
              s = norm(obj-point);
          end
     end

@@ -1,15 +1,16 @@
-%Constructor q = Queue(goal);
+%Same class as Queue, just checks for different visited point
+%due to lack of time, we didn't merge both classes
+%Constructor q = QueuePath(goal);
 %q.push(box); q.pop() -> box; q.isEmpty() -> bool; 
 %q.add(lst of box);
 %q.disp() -> prints all the values in the q (x, y) format
-classdef Queue < handle
+classdef QueuePath < handle
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	properties
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		lst = [Box2(0,0,-1)];
         goal = [];
-        start = [];
         epsilon;
 	end
 
@@ -20,20 +21,19 @@ classdef Queue < handle
 	    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	    % Constructor
 	    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	    function q = Queue(start, goal, epsilon)
+	    function q = QueuePath(goal, epsilon)
 	    	q.goal = transpose(goal);
             q.lst(1) = [];
             q.epsilon = epsilon;
-            q.start = transpose(start);
         end
         
         %add a box to queue
         function push(obj, value)
-            if(value.visited || value.type == BoxType.STUCK)
+            if(value.pathVisited)
                 return;
             end
             if length(obj.lst) < 1
-                obj.lst(1)= value;
+                obj.lst= value;
             
             elseif obj.equal(value, obj.lst(1))
                 return;
@@ -66,15 +66,17 @@ classdef Queue < handle
         function flag = isEmpty(obj)
             flag = isempty(obj.lst);
         end
+        %returns length
         function l = length(obj)
             l = length(obj.lst);
         end
-        
-        
+        %remove all items
+        function clear(obj)
+            obj.lst = [];
+        end
         %pop the nearest box to the goal
         function val = pop(obj)
             if(length(obj.lst)<1)
-                
                 return;
             end
             val = obj.lst(1);
@@ -85,9 +87,7 @@ classdef Queue < handle
         function flag = comp(obj,a,b)
             %disp(obj.goal);
             %disp([a.x a.y]);
-            %flag = (Geom2d.sep([a.x a.y], obj.goal)+Geom2d.sep([a.x a.y], obj.start)) <= (Geom2d.sep([b.x b.y], obj.goal)+Geom2d.sep([b.x b.y], obj.start));
             flag = Geom2d.sep([a.x a.y], obj.goal) <= Geom2d.sep([b.x b.y], obj.goal);
-
         end
         
        
@@ -97,7 +97,8 @@ classdef Queue < handle
                 disp(['(x: ', num2str(obj.lst(i).x),', y:', num2str(obj.lst(i).y), ')']);
             end
         end
-    end
+        end
+   
   
     
     

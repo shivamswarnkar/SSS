@@ -16,9 +16,11 @@ classdef SSS < handle
 		fname;		% filename
 		sdiv;		% subdivision
 		path=[];	% path 
-		startbox=[];	% box containing the start config
-		goalbox=[];	% box containing the goal config
+		startBox=[];	% box containing the start config
+		goalBox=[];	% box containing the goal config
         queue = [];
+        t=0;
+        mainloopRan = false;
 	end
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -32,7 +34,10 @@ classdef SSS < handle
 	    	if (nargin < 1)
                 fname = 'env0.txt';
             end
-		setup(fname);
+		sss.setup(fname);
+        sss.startBox = [];
+        sss.goalBox = [];
+        sss.t=0;
 	    end
 
 	    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -43,28 +48,37 @@ classdef SSS < handle
 	    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	    function run(obj, arg)
 	    	if nargin<1
-                obj.mainLoop();
-                obj.showPath();
+                flag = obj.mainLoop();
+                if(flag)
+                obj.showPathAnimation();
+                end
                 return;
             end
 
 		disp('Welcome to SSS!');
 	    while true
-            option = input(['Choose an options:', '0=quit, 1=mainLoop, 2=showEnv, 3=showPath','4=new setup']);
+            option = input(['Choose an options:', '0=quit, 1=mainLoop, 2=showEnv, 3=showPath','4=new setup ', '5=subdivision', '6=show path animation ']);
 	        switch option
                 case 0,
                     return;
                 case 1,
-                    obj.mainLoop();
-                    obj.showPath();
+                    flag = obj.mainLoop();
+                    if(flag)
+                    obj.showPathAnimation();
+                    end
                 case 2,
                     obj.showEnv();
                 case 3,
                     obj.showPath();
                 case 4,
-                    obj.fname=input('input environment file');
+                    obj.fname=input('input environment file: ');
                     obj.setup(obj.fname);
                     obj.showEnv();
+                case 5,
+                    obj.sdiv.displaySubDiv();
+                    
+                case 6,
+                    obj.showPathAnimation();
                 otherwise
                     disp('invalid option');
 	         end % switch
@@ -75,26 +89,29 @@ classdef SSS < handle
 	    % mainLoop
 	    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	    function flag = mainLoop(obj)
+            obj.mainloopRan = true;
 
 	        flag = false;
             startConfig = obj.sdiv.env.start;
             goalConfig = obj.sdiv.env.goal;
 	    	obj.startBox = obj.makeFree(startConfig);
-		if isempty(startBox)
-		    obj.display('NOPATH: start is not free');
+		if isempty(obj.startBox)
+		    disp('NOPATH: start is not free');
 		    return;
-		end
+        end
+        disp('Found start box');
 
 	    	obj.goalBox = obj.makeFree(goalConfig);
-		if isempty(goalBox)
-		    display('NOPATH: goal is not free');
+		if isempty(obj.goalBox)
+		    disp('NOPATH: goal is not free');
+		    return;
+        end
+        disp('Found goal box');
+        
+        if (~obj.makeConnected())
+		    display('NOPATH: start and goal not connected');
 		    return;
 		end
-
-		%if (!obj.makeConnected(obj.startBox, obj.goalBox))
-		 %   display('NOPATH: start and goal not connected');
-		  %  return;
-		%end
 		flag = true;
 	    end
 
@@ -103,10 +120,9 @@ classdef SSS < handle
 	    % Setup
 	    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	    function setup(obj, fname)
-	    	obj.env = Environment.readFile(fname);
-
-		obj.sdiv = Subdiv2(obj.env.rootbox.x, obj.env.rootbox.y, obj.env.rootbox.w); 
-		obj.unionF = UnionFind();
+	    	obj.sdiv = Subdiv2(fname);
+            obj.mainloopRan = false;
+            %obj.unionF = UnionFind();
 	    end
 
 
@@ -119,10 +135,11 @@ classdef SSS < handle
 	    function box = makeFree(obj, config)
             box = obj.sdiv.findBox(config(1), config(2));
             while box.type ~= BoxType.FREE && box.w > obj.sdiv.env.epsilon
-                box.split();
+                %disp(box.type);
+                obj.sdiv.split(box);
                 box = obj.sdiv.findBox(config(1), config(2));
             end
-            if box.type ~= BoxType.FREE && box.w <= obj.sdiv.env.epsilon 
+            if box.type ~= BoxType.FREE  
                 box = [];
             end
 	    end
@@ -133,23 +150,168 @@ classdef SSS < handle
 	    %		keeps splitting until we find
 	    %		a FREE path from startBox to goalBox.
 	    %		Returns true if path found, else false.
+        % we are get all nbrs, push them on the priority queue
+        % and then select the box closest to the goal, and explore
 	    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	    function flag = makeConnected(startBox, goalBox)
+	    function flag = makeConnected(obj)
             
-	    end
+%            find(obj, x)
+            q = Queue([obj.startBox.x; obj.startBox.y], [obj.goalBox.x; obj.goalBox.y],obj.sdiv.env.epsilon );
+            nbrs = obj.sdiv.getNeighbours(obj.startBox);
+            obj.startBox.visited = true;
+            obj.sdiv.setPrev(nbrs, obj.startBox);
+            %disp(nbrs(1));
+            q.add(nbrs);
+            
+            box = q.pop();
+            cont = true;
+            disp('working...');
+            
+            t=0;
+            while ((~q.isEmpty()|| box.type == BoxType.MIXED) && ~(obj.sdiv.unionF.find(obj.goalBox) == obj.sdiv.unionF.find(obj.startBox)))%box.isIn(obj.sdiv.env.goal(1),obj.sdiv.env.goal(2) ) && box.type==BoxType.FREE))
+                %t = t+1;
+                
+                
+                %for nbr = nbrs
+                   %nbr.showBox();
+                %end
+                box.visited = true;
+                if box.type == BoxType.FREE
+                    %box.unionFindIdx = obj.sdiv.unionF.add(box);
+                    box.prev.next = box;
+                    nbrs = obj.sdiv.getNeighbours(box);
+                    obj.sdiv.setPrev(nbrs, box);
+                    q.add(nbrs); %
+                   
+                elseif box.type == BoxType.MIXED
+                    obj.sdiv.split(box);
+                    %add children sharing edge with parent
+                    nbrs = obj.sdiv.getNeighbours(box.prev);
+                    for nbr = nbrs
+                        %nbr.showBox();
+                        if(nbr.w ~=0 && q.equal(nbr.parent,box))
+                            nbr.prev = box.prev;
+                            q.push(nbr);
+                        end
+                    end
+                    
+                end
+                box = q.pop();
+                
+                    
+               
+            end
+            if(obj.sdiv.unionF.find(obj.goalBox) == obj.sdiv.unionF.find(obj.startBox))
+                flag = true;
+                %obj.goalBox = box;
+                
+            else
+                flag = false;
+            end
+            if(flag)
+                %disp('here');
+                box.next = obj.goalBox;
+                %obj.goalBox.prev.next = obj.goalBox;
+            end
+            
+        end
+        
+        %using the almost the same queue class, we're building the path by
+        %exploring closest box to the goal
+        function flag = findPath(obj, currBox)
+            if(QueuePath.equal(currBox, obj.goalBox))
+                flag = true;
+                return;
+            end
+            currBox.pathVisited = true;
+            q = QueuePath([obj.goalBox.x; obj.goalBox.y],obj.sdiv.env.epsilon);
+            for nbr = obj.sdiv.getNeighbours(currBox)
+                % disp(obj.goalBox.unionFindIdx);
+                 if(nbr.type ~= BoxType.FREE || nbr.unionFindIdx == -1)
+                     continue;
+                 end
+                 if(~nbr.pathVisited  && (obj.sdiv.unionF.find(obj.goalBox) == obj.sdiv.unionF.find(nbr)))
+                    %disp(num2str(nbr.unionFindIdx));
+                     
+                    q.push(nbr);
+                 end
+            end
+                
+            
+            found = false;
+            while(~q.isEmpty() && ~found)
+                nbr = q.pop();
+                nbr.prev = currBox;
+                found = findPath(obj, nbr);
+            end
+            if(found)
+                currBox.next = nbr;
+                flag = true;
+            else
+                flag=false;
+            end
+        end
 
 	    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	    % showPath(path)
 	    %		Animation of the path
 	    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	    function showPath(path)
+	    function showPath(obj)
+            if(~obj.mainloopRan)
+                obj.mainLoop();
+            end
+            
+            obj.findPath(obj.startBox);
+            currBox = obj.startBox;
+            plot([obj.sdiv.env.start(1), obj.startBox.x],[obj.sdiv.env.start(2), obj.startBox.y],'-.or');
+            hold on;
+            obj.path=[];
+            
+            while ~Queue.equal(currBox, obj.goalBox)
+                %currBox.showBox();
+                obj.path{length(obj.path)+1} = [[currBox.x  currBox.next.x], [currBox.y currBox.next.y]];
+                plot([obj.path{length(obj.path)}(1) obj.path{length(obj.path)}(2)], [obj.path{length(obj.path)}(3) obj.path{length(obj.path)}(4)],'-.or');
+                hold on
+                currBox = currBox.next;
+                
+            end
+            plot([obj.sdiv.env.goal(1), obj.goalBox.x],[obj.sdiv.env.goal(2), obj.goalBox.y],'-.or');
+            hold off
+            obj.sdiv.env.showEnv(false);
+            
+        end
+        
+        
+        function showPathAnimation(obj)
+            if(~obj.mainloopRan)
+                obj.mainLoop();
+            end
+            obj.findPath(obj.startBox);
+            currBox = obj.startBox;
+            obj.path=[];
+            
+            while ~Queue.equal(currBox, obj.goalBox)
+                %currBox.showBox();
+                currBox = currBox.next;
+                obj.sdiv.env.showEnv(true);
+                obj.sdiv.env.showDisc(currBox.x,currBox.y,[0, 1, 1]);
+                drawnow;
+                pause(0.1);
+               
+                
+            end
+            %obj.sdiv.env.showDisc(obj.sdiv.env.goal(1),obj.sdiv.env.goal(2),[0, 1, 1]);
+            %drawnow;
+            
+            
 	    end
 
 	    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	    % showEnv()
 	    %		Display the environment
 	    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	    function showEnv()
+	    function showEnv(obj)
+            obj.sdiv.env.showEnv();
 	    end
 
 	end
@@ -165,7 +327,12 @@ classdef SSS < handle
 	    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	    % test()
 	    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	    function flag = test()
+	    function flag = test(fname)
+            if nargin<1
+                fname = 'env6.txt';
+            end
+            s = SSS(fname);
+            s.run(); 
 	    end
 
 	end

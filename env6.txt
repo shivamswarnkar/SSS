@@ -33,29 +33,34 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Robot:
-radius: 0.7
+radius: 0.5
 
 % Resolution:
 epsilon: 0.1
 
 %Bounding Box:
-PX: 0 10 10 0 		
-PY: 0 0 10 10	
+PX: 0 20 20 0 		
+PY: 0 0 20 20	
 
 %Configurations:
-start:  3, 2
-goal:	9, 9
+start:  1, 19
+goal:	19, 1
 
 % What follows is a sequence of polygons (in CCW order)
 
 %Triangle
-PX: 5 5 2
-PY: 1 5 5
-%PX: 1 2 2 1
-%PY: 4.5 8 9 9
-%Rectangle
-PX: 7 8 8 7
-PY: 3.5 3.5 10 10
+PX: 2 2 8 8
+PY: 20 15 15 20
+
+PX: 2 2 4 4
+PY: 0 13 13 0
+
+PX: 10 10 12 12 16 16 18 18
+PY: 0 18 18 14 14 15 15 0
+
+PX: 14 14 18 18
+PY: 20 17 17 20
+
 
 
 % END

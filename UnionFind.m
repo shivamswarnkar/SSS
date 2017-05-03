@@ -88,7 +88,7 @@ classdef UnionFind < handle
             display(obj.PARENT);
         end
 
-        function idx = ADD(obj, item)
+        function idx = add(obj, item)
 		% ADD(item) will add item to the universe and return its index.
             idx = obj.index;
             obj.ITEM = [obj.ITEM item];
@@ -100,6 +100,7 @@ classdef UnionFind < handle
 		% FIND(x) returns the index of the representative of the 
 		%   equivalence class of ITEM(x).
 			root = x.unionFindIdx;
+            %disp(root);
             while (obj.PARENT(root) > 0)
                 root = obj.PARENT(root);
             end

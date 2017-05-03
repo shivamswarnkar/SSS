@@ -1,4 +1,4 @@
-%file: env0.txt
+%file: env4.txt
 %	
 %	Note that "%" is a comment character (the rest of line is ignored)
 %	We are basically reading several sequences of numbers,
@@ -33,7 +33,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Robot:
-radius: 0.7
+radius: 0.5
 
 % Resolution:
 epsilon: 0.1
@@ -43,19 +43,25 @@ PX: 0 10 10 0
 PY: 0 0 10 10	
 
 %Configurations:
-start:  3, 2
+start:  1, 1
 goal:	9, 9
 
 % What follows is a sequence of polygons (in CCW order)
 
 %Triangle
-PX: 5 5 2
-PY: 1 5 5
+%PX: 5 5 2
+%PY: 1 5 5
 %PX: 1 2 2 1
 %PY: 4.5 8 9 9
 %Rectangle
 PX: 7 8 8 7
-PY: 3.5 3.5 10 10
+PY: 6 6 10 10
+
+PX: 4 5 5 4
+PY: 8 8 0 0
+
+PX: 1 2 2 1
+PY: 4 4 10 10
 
 
 % END
